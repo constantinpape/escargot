@@ -25,6 +25,8 @@ void export_algorithm(py::module & mod) {
                 
                 // TODO assert correct shape = (x,y,2)
                 
+                // release the gil
+                py::gil_scoped_release release;
                 return graphWatershed2d<double, uint32_t>(inArray, upper_threshold, lower_threshold, size_threshold, region_threshold);
             },
             "Run affinity watershed on 2d, 2 channel input");
