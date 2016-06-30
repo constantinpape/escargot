@@ -2,6 +2,7 @@
 
 #pragma once
 
+#define HAVE_CPP11_INITIALIZER_LISTS
 #include "andres/marray.hxx"
 
 namespace escargot{
