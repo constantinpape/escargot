@@ -1,0 +1,3 @@
+add_executable(test_affinity_watershed test_affinity_watershed.cxx)
+# TODO gtest libs
+add_test(test_affinity_watershed test_affinity_watershed)

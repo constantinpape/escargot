@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "escargot/marray/marray.hxx"
-#include "escargot/ufd/ufd.hxx"
+#include "escargot/tools/ufd.hxx"
 #include "escargot/tools/tools.hxx"
 
 // TODO make everything actually graph based, once we have grid graphs
@@ -53,17 +53,16 @@ graphWatershed2d(marray::Marray<value_type> edge_weights, value_type const upper
 
     marray::Marray<value_type> node_weights = nodeWeightsFromEdgeWeights<value_type, label_type>(edge_weights, upper_threshold, lower_threshold);
 
-    std::cout << "A" << std::endl;
+    //std::cout << "A" << std::endl;
 
     marray::Marray<label_type> labels = runGraphWatershed2d<value_type, label_type>(edge_weights, node_weights);
     
-    std::cout << "B" << std::endl;
+    //std::cout << "B" << std::endl;
     
     auto region_weights = get_region_weights(edge_weights, labels);
     
-    std::cout << "C" << std::endl;
+    //std::cout << "C" << std::endl;
     
-    // FIXME this is super inefficient!
     apply_size_filter_inplace(labels, region_weights, size_threshold, region_threshold);
     
     return labels;
