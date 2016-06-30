@@ -1,14 +1,11 @@
 #pragma once
-#ifndef ANDRES_PARTITION_HXX
-#define ANDRES_PARTITION_HXX
 
 #include <cstddef>
 #include <vector>
 #include <map>
 
-
-namespace nifty {
-namespace ufd{
+namespace escargot {
+namespace tools {
 
 /// Disjoint set data structure with path compression.
 template<class T = uint64_t>
@@ -237,7 +234,5 @@ Ufd<T>::elementLabeling(
     }
 }
 
-} // namespace ufd
-} // namespace nifty
-
-#endif // #ifndef ANDRES_PARTITION_HXX
+} // namespace tools
+} // namespace escargot
