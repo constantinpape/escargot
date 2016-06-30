@@ -23,10 +23,11 @@ namespace algorithm {
 
 typedef std::pair<size_t,size_t> coordinate_type;
 
-
+// TODO does it make sense to call a view by reference? :
+// marray::View & vs marray::Marray &
 template<class value_type, class label_type> void
 nodeWeightsFromEdgeWeights(marray::View<value_type> const & edge_weights,
-        value_type const upper_threshold, value_type const lower_threshold, marray::Marray<value_type> & out) {
+        value_type const upper_threshold, value_type const lower_threshold, marray::View<value_type> & out) {
 
     value_type infinity = *std::max_element(edge_weights.begin(), edge_weights.end()) + .1;
 
@@ -307,34 +308,37 @@ apply_size_filter(std::map<coordinate_type, value_type> const & region_weights, 
 // toplevel function for the watershed 
 // TODO check that shapes match
 // FIXME call by reference of edge weights here is a little tricky, because they are changed!
-template<class value_type, class label_type> marray::View<label_type> 
-graphWatershed2d(marray::View<value_type> & edge_weights, value_type const upper_threshold, value_type const lower_threshold, value_type const size_threshold, value_type const region_threshold, marray::View<label_type> & out) {
+// TODO workaround with using pyview internally...
+template<class value_type, class label_type> marray::PyView<label_type> 
+graphWatershed2d(marray::View<value_type> & edge_weights, value_type const upper_threshold, value_type const lower_threshold, value_type const size_threshold, value_type const region_threshold) {
 
-    std::cout << "WS2d" << std::endl;
+    if( lower_threshold > upper_threshold )
+        throw( std::runtime_error("Thresholds inverted!") );
+
+    size_t shape[] = {edge_weights.shape(0), edge_weights.shape(1)};
+
+    marray::PyView<label_type> ret( shape, shape + 2 );
+    std::fill(ret.begin(), ret.end(), 0);
+
+    marray::Marray<value_type> node_weights( shape, shape + 2);
     
-    //if( lower_threshold > upper_threshold )
-    //    throw( std::runtime_error("Thresholds inverted!") );
+    nodeWeightsFromEdgeWeights<value_type, label_type>(edge_weights, upper_threshold, lower_threshold, node_weights);
 
-    //std::cout << "AA" << std::endl;
-    //
-    //size_t nshape[] = {out.shape(0), out.shape(1)};
-    //marray::Marray<value_type> node_weights( nshape, nshape + 2);
-    //
-    //nodeWeightsFromEdgeWeights<value_type, label_type>(edge_weights, upper_threshold, lower_threshold, node_weights);
+    std::cout << "A" << std::endl;
 
-    //std::cout << "A" << std::endl;
+    runGraphWatershed2d<value_type, label_type>(edge_weights, node_weights, ret);
+    
+    std::cout << "B" << std::endl;
+    
+    // TODO call by reference instead of returnvalue
+    auto region_weights = get_region_weights(edge_weights, ret);
+    
+    std::cout << "C" << std::endl;
+    
+    apply_size_filter(region_weights, size_threshold, region_threshold, ret);
+    std::cout << "Out of ws" << std::endl;
 
-    //runGraphWatershed2d<value_type, label_type>(edge_weights, node_weights, out);
-    //
-    //std::cout << "B" << std::endl;
-    //
-    //// TODO call by reference instead of returnvalue
-    //auto region_weights = get_region_weights(edge_weights, out);
-    //
-    //std::cout << "C" << std::endl;
-    //
-    //apply_size_filter(region_weights, size_threshold, region_threshold, out);
-    //std::cout << "Out of ws" << std::endl;
+    return ret;
 }
 
 

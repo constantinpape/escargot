@@ -22,26 +22,23 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU"
   endif()
 endif()
 
-# Include path for Python header files
-include_directories(${PYTHON_INCLUDE_DIR})
-
 
 # Create the binding library
-add_library(_escargot SHARED
-    escargot.cxx
+add_library(escargot_module SHARED
+    escargot_module.cxx
     # ... extra files go here ...
-    algorithm/algorithm.cxx
+    #algorithm/algorithm.cxx
 )
 
-set_target_properties(_escargot PROPERTIES PREFIX "")
+set_target_properties(escargot_module PROPERTIES PREFIX "")
 
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/python/escargot)
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/test_python/)
 
 ADD_CUSTOM_COMMAND(
-        TARGET _escargot
+        TARGET escargot_module
         POST_BUILD
-        COMMAND ${CMAKE_COMMAND} ARGS -E copy_if_different $<TARGET_FILE:_escargot> ${CMAKE_BINARY_DIR}/python/escargot/
+        COMMAND ${CMAKE_COMMAND} ARGS -E copy_if_different $<TARGET_FILE:escargot_module> ${CMAKE_BINARY_DIR}/python/escargot/
         COMMENT "Copying target to temporary module directory")
 
 

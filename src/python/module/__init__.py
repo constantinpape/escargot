@@ -1,1 +1,1 @@
-from _escargot import *
+from escargot_module import *

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <andres/marray.hxx>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>

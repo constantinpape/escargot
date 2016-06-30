@@ -45,6 +45,11 @@ enable_testing()
 # global headers
 file(GLOB_RECURSE headers include/*.hxx)
 file(GLOB_RECURSE headers ${CMAKE_INSTALL_PREFIX}/include/*.hxx)
+
+if(BUILD_ESCARGOT_PYTHON)
+    include_directories(${PYTHON_INCLUDE_DIR})
+endif()
+
 include_directories(include)
 
 # src folder 
