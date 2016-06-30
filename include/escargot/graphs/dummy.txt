@@ -1,0 +1,12 @@
+TODO
+
+graph base
+
+grid graph base
+2d grid graph
+3d grid graph
+
+rag base
+2d rag
+2,5d rag
+3d rag
