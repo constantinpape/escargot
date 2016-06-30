@@ -1,4 +1,4 @@
-# Efficient, SCAlabale and Resourceful Graph algOriThms
+# Efficient, SCAlabale and Reusable Graph algOriThms
 
 Implementing graph - based algorithms for computer vision.
 

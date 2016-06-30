@@ -29,8 +29,12 @@ int main() {
     double lower_threshold = 0.6;
     size_t size_threshold   = 1;
     double region_threshold = 0.8;
+
+    size_t shape_nweights[] = { edge_weights.shape(0), edge_weights.shape(1)};
+
+    marray::Marray<size_t> segmentation( shape_nweights, shape_nweights + 2);
     
-    auto segmentation = algorithm::graphWatershed2d<double, size_t>(edge_weights, upper_threshold, lower_threshold, size_threshold, region_threshold);
+    algorithm::graphWatershed2d<double, size_t>(edge_weights, upper_threshold, lower_threshold, size_threshold, region_threshold, segmentation);
 
     for( size_t d = 0; d < segmentation.dimension(); d++ )
         std::cout << segmentation.shape(d) << std::endl;
