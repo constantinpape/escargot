@@ -20,14 +20,14 @@
 namespace escargot {
 namespace algorithm {
 
-
 typedef std::pair<size_t,size_t> coordinate_type;
 
 // TODO does it make sense to call a view by reference? :
 // marray::View & vs marray::Marray &
 template<class value_type, class label_type> void
 nodeWeightsFromEdgeWeights(marray::View<value_type> const & edge_weights,
-        value_type const upper_threshold, value_type const lower_threshold, marray::View<value_type> & out) {
+        value_type const upper_threshold, value_type const lower_threshold,
+        marray::View<value_type> & out) {
 
     value_type infinity = *std::max_element(edge_weights.begin(), edge_weights.end()) + .1;
 
@@ -66,9 +66,11 @@ nodeWeightsFromEdgeWeights(marray::View<value_type> const & edge_weights,
 
 
 template<class value_type, class label_type> inline 
-label_type stream(coordinate_type const pixel,
-        marray::View<value_type> const & edge_weights, marray::View<value_type> const & node_weights,
-        marray::View<label_type> const & labels, std::vector< std::pair<size_t,size_t> > & stream_coordinates ) {
+label_type stream(coordinate_type const pixel, 
+        marray::View<value_type> const & edge_weights,
+        marray::View<value_type> const & node_weights,
+        marray::View<label_type> const & labels, 
+        std::vector< std::pair<size_t,size_t> > & stream_coordinates ) {
     
     // add pixel to the stream coordinates
     stream_coordinates.push_back(pixel);
@@ -151,7 +153,8 @@ label_type stream(coordinate_type const pixel,
 
 
 template<class value_type, class label_type>  void
-runGraphWatershed2d(marray::View<value_type> const & edge_weights, marray::Marray<value_type> const & node_weights,
+runGraphWatershed2d(marray::View<value_type> const & edge_weights,
+        marray::Marray<value_type> const & node_weights,
         marray::View<label_type> & out ) {
     
     label_type next_label = 1;
@@ -183,7 +186,8 @@ runGraphWatershed2d(marray::View<value_type> const & edge_weights, marray::Marra
 
 // TODO proper graph instead
 template<class value_type, class label_type> std::map<coordinate_type, value_type>
-get_region_weights(marray::View<value_type> const & edge_weights, marray::View<label_type> const & labels) {
+get_region_weights(marray::View<value_type> const & edge_weights,
+        marray::View<label_type> const & labels) {
 
     // unfortunately unordered map does not work because coordinate_type can not be hashed (would probably be possible, if we implemented a proper hash function)
     //std::unordered_map<coordinate_type, value_type> ret;
@@ -239,7 +243,9 @@ get_region_weights(marray::View<value_type> const & edge_weights, marray::View<l
 
 
 template<class value_type, class label_type> void 
-apply_size_filter(std::map<coordinate_type, value_type> const & region_weights, size_t const size_threshold, value_type const region_threshold, marray::View<label_type> & labels ) {
+apply_size_filter(std::map<coordinate_type, value_type> const & region_weights,
+        size_t const size_threshold, value_type const region_threshold,
+        marray::View<label_type> & labels ) {
     
     // dump map into a vector and sort it by value
     auto region_weights_vec = std::vector<std::pair<coordinate_type,value_type> >(region_weights.begin(), region_weights.end());
@@ -310,7 +316,9 @@ apply_size_filter(std::map<coordinate_type, value_type> const & region_weights, 
 // FIXME call by reference of edge weights here is a little tricky, because they are changed!
 // TODO workaround with using pyview internally...
 template<class value_type, class label_type> marray::PyView<label_type> 
-graphWatershed2d(marray::View<value_type> & edge_weights, value_type const upper_threshold, value_type const lower_threshold, value_type const size_threshold, value_type const region_threshold) {
+graphWatershed2d(marray::View<value_type> & edge_weights,
+        value_type const upper_threshold, value_type const lower_threshold,
+        value_type const size_threshold, value_type const region_threshold) {
 
     if( lower_threshold > upper_threshold )
         throw( std::runtime_error("Thresholds inverted!") );
