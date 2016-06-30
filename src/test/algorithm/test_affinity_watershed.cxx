@@ -13,7 +13,7 @@ using namespace escargot;
 int main() {
     
     size_t shape_eweights[] = {256,256,2};
-    marray::PyView<double> edge_weights(shape_eweights, shape_eweights + 3);
+    marray::View<double> edge_weights(shape_eweights, shape_eweights + 3);
     
     // fill with random values between 0 and 1
     
