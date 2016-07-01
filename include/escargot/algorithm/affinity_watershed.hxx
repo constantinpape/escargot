@@ -315,38 +315,28 @@ apply_size_filter(std::map<coordinate_type, value_type> const & region_weights,
 // TODO check that shapes match
 // FIXME call by reference of edge weights here is a little tricky, because they are changed!
 // TODO workaround with using pyview internally...
-template<class value_type, class label_type> marray::PyView<label_type> 
+template<class value_type, class label_type> void 
 graphWatershed2d(marray::View<value_type> & edge_weights,
         value_type const upper_threshold, value_type const lower_threshold,
-        value_type const size_threshold, value_type const region_threshold) {
+        value_type const size_threshold, value_type const region_threshold, marray::View<label_type> & ret) {
 
     if( lower_threshold > upper_threshold )
         throw( std::runtime_error("Thresholds inverted!") );
 
     size_t shape[] = {edge_weights.shape(0), edge_weights.shape(1)};
 
-    marray::PyView<label_type> ret( shape, shape + 2 );
-    std::fill(ret.begin(), ret.end(), 0);
-
     marray::Marray<value_type> node_weights( shape, shape + 2);
     
     nodeWeightsFromEdgeWeights<value_type, label_type>(edge_weights, upper_threshold, lower_threshold, node_weights);
 
-    std::cout << "A" << std::endl;
-
     runGraphWatershed2d<value_type, label_type>(edge_weights, node_weights, ret);
-    
-    std::cout << "B" << std::endl;
     
     // TODO call by reference instead of returnvalue
     auto region_weights = get_region_weights(edge_weights, ret);
     
-    std::cout << "C" << std::endl;
-    
     apply_size_filter(region_weights, size_threshold, region_threshold, ret);
     std::cout << "Out of ws" << std::endl;
 
-    return ret;
 }
 
 
