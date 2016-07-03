@@ -308,7 +308,6 @@ apply_size_filter(std::map<coordinate_type, value_type> const & region_weights,
             labels(x,y) = new_label_map[ ufd.find( labels(x,y) ) ];
         }
     }
-    std::cout << "Out of filters" << std::endl;
 }
 
 // toplevel function for the watershed 
@@ -335,7 +334,6 @@ graphWatershed2d(marray::View<value_type> & edge_weights,
     auto region_weights = get_region_weights(edge_weights, ret);
     
     apply_size_filter(region_weights, size_threshold, region_threshold, ret);
-    std::cout << "Out of ws" << std::endl;
 
 }
 

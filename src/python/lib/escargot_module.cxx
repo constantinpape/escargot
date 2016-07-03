@@ -14,6 +14,8 @@ namespace algorithm {
 // TODO need to revisit this!
 template<class value_type, class label_type> 
 void export_algorithm(py::module & mod) {
+
+    std::cout << "Starting affinity watershed" << std::endl;
     
     mod.def("affinity_watershed_2d",
             [&](marray::PyView<value_type> inArray, value_type const upper_threshold, value_type const lower_threshold,
