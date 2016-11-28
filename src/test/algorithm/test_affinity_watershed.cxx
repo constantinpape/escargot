@@ -13,7 +13,7 @@ using namespace escargot;
 int main() {
     
     size_t shape_eweights[] = {256,256,2};
-    marray::View<double> edge_weights(shape_eweights, shape_eweights + 3);
+    marray::Marray<double> edge_weights(shape_eweights, shape_eweights + 3);
     
     // fill with random values between 0 and 1
     
@@ -30,9 +30,11 @@ int main() {
     size_t size_threshold   = 1;
     double region_threshold = 0.8;
 
-    size_t shape_nweights[] = { edge_weights.shape(0), edge_weights.shape(1)};
+    size_t shape[] = { edge_weights.shape(0), edge_weights.shape(1)};
 
-    auto seg = algorithm::graphWatershed2d<double, size_t>(edge_weights, upper_threshold, lower_threshold, size_threshold, region_threshold);
+    marray::Marray<size_t> seg(shape, shape + 2);
+
+    algorithm::graphWatershed2d<double, size_t>(edge_weights, upper_threshold, lower_threshold, size_threshold, region_threshold, seg);
 
     for( size_t d = 0; d < seg.dimension(); d++ )
         std::cout << seg.shape(d) << std::endl;

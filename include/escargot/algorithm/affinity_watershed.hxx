@@ -11,6 +11,9 @@
 #include <utility>
 #include <vector>
 
+// for debug output
+#include <iostream>
+
 #include "escargot/marray/marray.hxx"
 #include "escargot/tools/ufd.hxx"
 #include "escargot/tools/tools.hxx"
@@ -25,8 +28,7 @@ typedef std::pair<size_t,size_t> coordinate_type;
 // TODO does it make sense to call a view by reference? :
 // marray::View & vs marray::Marray &
 template<class value_type> void
-nodeWeightsFromEdgeWeights(marray::View<value_type> const & edge_weights,
-        value_type const upper_threshold, value_type const lower_threshold,
+nodeWeightsFromEdgeWeights(marray::View<value_type> const & edge_weights, value_type const lower_threshold,
         marray::View<value_type> & out, bool const ignore_border = false) {
 
     value_type infinity = *std::max_element(edge_weights.begin(), edge_weights.end()) + .1;
@@ -49,20 +51,30 @@ nodeWeightsFromEdgeWeights(marray::View<value_type> const & edge_weights,
             value_type max_weight = *std::max_element(incoming_weights.begin(), incoming_weights.end() ); 
             out(x,y) = (max_weight > lower_threshold ) ? infinity : max_weight;
 
-            if( ignore_border && (x == 0 || y == 0 || x == out.shape(0) - 1 || y == out.shape(1) -1) )
+            if( ignore_border && (x == 0 || y == 0 || x == out.shape(0) - 1 || y == out.shape(1) - 1) )
                 out(x,y) = infinity;
         }
     
     }
+}
 
-    for( size_t x = 0; x < out.shape(0); x++) {
-        for( size_t y = 0; y < out.shape(1); y++) {
+template<class value_type> void
+thresholdEdgeWeights(marray::View<value_type> & edge_weights, value_type const upper_threshold ) {
+    
+    value_type infinity = *std::max_element(edge_weights.begin(), edge_weights.end()) + .1;
+
+    for( size_t x = 0; x < edge_weights.shape(0); x++) {
+        for( size_t y = 0; y < edge_weights.shape(1); y++) {
             
             if( edge_weights(x,y,0) > upper_threshold )
+            {
                 edge_weights(x,y,0) = infinity;
+            }
             
             if( edge_weights(x,y,1) > upper_threshold )
+            {
                 edge_weights(x,y,1) = infinity;
+            }
         }
     }
 }
@@ -73,7 +85,8 @@ label_type stream(coordinate_type const pixel,
         marray::View<value_type> const & edge_weights,
         marray::View<value_type> const & node_weights,
         marray::View<label_type> const & labels, 
-        std::vector< std::pair<size_t,size_t> > & stream_coordinates ) {
+        std::vector< std::pair<size_t,size_t> > & stream_coordinates
+        /*,std::ofstream debug*/ ) {
     
     // add pixel to the stream coordinates
     stream_coordinates.push_back(pixel);
@@ -127,8 +140,7 @@ label_type stream(coordinate_type const pixel,
         for(;it_weights != weights.end(); it_weights++, it_coordinates++) {
             
             // only consider a pixel, if it is not in the stream yet and if its weight is equal to the nodes max-weight
-            // TODO more robust comparison
-            if( std::find(stream_coordinates.begin(), stream_coordinates.end(), *it_coordinates) == stream_coordinates.end() && *it_weights == w_max) {
+            if( std::find(stream_coordinates.begin(), stream_coordinates.end(), *it_coordinates) == stream_coordinates.end() && fabs(*it_weights - w_max) <= std::numeric_limits<value_type>::epsilon() ) {
 
                 // if we hit a labeled pixel, return the stream 
                 if( labels(it_coordinates->first,it_coordinates->second) != 0 )
@@ -140,6 +152,8 @@ label_type stream(coordinate_type const pixel,
                     stream_coordinates.push_back(*it_coordinates);
                     queue.clear();
                     queue.push_back(*it_coordinates);
+                    // break looping over the current neighbors and go to new pix
+                    break;
                 }
                 else {
                     stream_coordinates.push_back(*it_coordinates);
@@ -162,20 +176,30 @@ runGraphWatershed2d(marray::View<value_type> const & edge_weights,
     
     label_type next_label = 1;
 
+    // ofstream for debug output
+    //std::ofstream debug;
+    //debug.open("run_wsgraph_debug.txt")
+
     // iterate over all pixel
     for( size_t x = 0; x < out.shape(0); x++) {
         for( size_t y = 0; y < out.shape(1); y++) {
 
             if( ignore_border && (x == 0 || y == 0 || x == out.shape(0) - 1 || y == out.shape(1) -1) )
                 continue;
-            
+                        
+            //debug << "runGraphWs2d: pixels " << x << " , " << y << std::endl;
             // if the pixel is already labeled, continue
             if( out(x,y) != 0 )
+            {
+                //debug << "are labeled -> continue" << std::endl;
                 continue;
+            }
+
+            //debug << " are not labeled -> call stream" << std::endl;
 
             // call stream -> finds the stream belonging to the current label and pixel coordinates belonging to the stream
             std::vector< coordinate_type > stream_coordinates;
-            label_type label = stream( coordinate_type(x, y), edge_weights, node_weights, out, stream_coordinates);
+            label_type label = stream( coordinate_type(x, y), edge_weights, node_weights, out, stream_coordinates /*, debug*/);
 
             // if stream returns 0, we found a new stream
             if( label == 0 )
@@ -187,6 +211,8 @@ runGraphWatershed2d(marray::View<value_type> const & edge_weights,
 
         }
     }
+    
+    //debug.close();
 }
 
 
@@ -319,7 +345,6 @@ apply_size_filter(std::map<coordinate_type, value_type> const & region_weights,
 // toplevel function for the watershed 
 // TODO check that shapes match
 // FIXME call by reference of edge weights here is a little tricky, because they are changed!
-// TODO workaround with using pyview internally...
 template<class value_type, class label_type> void 
 graphWatershed2d(marray::View<value_type> & edge_weights,
         value_type const upper_threshold, value_type const lower_threshold,
@@ -332,7 +357,8 @@ graphWatershed2d(marray::View<value_type> & edge_weights,
 
     marray::Marray<value_type> node_weights( shape, shape + 2);
     
-    nodeWeightsFromEdgeWeights<value_type>(edge_weights, upper_threshold, lower_threshold, node_weights);
+    nodeWeightsFromEdgeWeights<value_type>(edge_weights, lower_threshold, node_weights);
+    thresholdEdgeWeights(edge_weights, upper_threshold);
 
     runGraphWatershed2d<value_type, label_type>(edge_weights, node_weights, ret);
     
@@ -341,128 +367,6 @@ graphWatershed2d(marray::View<value_type> & edge_weights,
     
     apply_size_filter(region_weights, size_threshold, region_threshold, ret);
 
-}
-
-
-template<class value_type> bool
-merge_subblocks(marray::View<value_type> & labeling1, marray::View<value_type> & labeling2,
-        std::vector<size_t> const & range1, std::vector<size_t> const & range2,
-        marray::View<value_type> & global_labeling) {
-        
-        // check if we have overlap in x
-        if( range2[0] == range1[1]- 2 && ( range1[2] == range2[2] && range1[3] == range2[3] )) {
-
-            // get the number of unique segments and initialize ufd
-            value_type max1 = *std::max_element(labeling1.begin(), labeling1.end() ) ;
-            value_type n_segs = max1 + *std::max_element(labeling2.begin(), labeling2.end() );
-            
-            tools::Ufd<value_type> ufd(n_segs);
-
-            // add max of block 1 to block 2 to keep ids unique, only for non - zero entries
-            for( auto it = labeling1.begin(); it < labeling1.end(); it++)
-                *it += (*it != 0) ? max1 : 0;
-
-            // merge along the x overlap
-            //leave out the overlapping y coordinates
-            size_t y_start = (range1[2] != 0) ? range1[2] + 1 : range1[2];
-            size_t y_stop  = (range1[3] != global_labeling.shape(2)-1) ? range1[3]-1 : range1[3];
-            
-            for( size_t y = 0; y < y_stop - y_start; y++) {
-
-                // get the labels of the overlapping vertices in both blocks
-                value_type l1_1 = labeling1(range1[1] - 1, y);
-                value_type l1_2 = labeling1(range1[1] - 2, y);
-                value_type l2_1 = labeling2(0,y);
-                value_type l2_2 = labeling2(1,y);
-
-                // see if these vertices are connected / corresponding edges on or off
-                bool e_1 = l1_1 == l1_2;
-                bool e_2 = l2_1 == l2_2;
-
-                //  one edge on, one off   -> merge
-                
-                if( e_1 && !e_2 ) {
-                    // edge is connected in labeling1 and not connected in labeling2
-                    
-                    // 0's are unconnected, hence we don't merge them in the ufd
-                    if( l2_1 == 0 )
-                        labeling2(0,y) = ufd.find(l1_1);
-                    else
-                        ufd.merge(l2_1, l1_1);
-                    
-                    if( l2_2 == 0 )
-                        labeling2(1,y) = ufd.find(l1_1);
-                    else
-                        ufd.merge(l2_2, l2_1);
-
-                }
-
-                else if( !e_1 && e_2 ) {
-                    // edge is not connected in s1 and connected in s2
-                    
-                    // 0's are unconnected, hence we don't merge them in the ufd
-                    if( l1_1 == 0 )
-                        labeling1(range1[1] - 1,y) = ufd.find(l2_1);
-                    else
-                        ufd.merge(l1_2, l2_1);
-                    
-                    if( l1_2 == 0 )
-                        labeling1(range1[1] - 2,y) = ufd.find(l2_1);
-                    else
-                        ufd.merge(l1_2, l2_1);
-
-                }
-
-                // both edges off -> merge
-                // TODO in his thesis, Zlateski describes some further merging steps in this case, which I don'y get yet
-                else if ( e_1 && e_2)
-                    ufd.merge(l1_1, l1_2);
-
-                // both edges on -> do nothing
-            }
-
-            // get new labeling and write it back to the volumes
-            std::map<value_type, value_type> labels_new;
-            ufd.representativeLabeling(labels_new);
-
-            for( size_t x = range1[0]; x < range1[1] - 1; x++ ) {
-
-                for ( size_t y = y_start; y < y_stop; y++ )  {
-                    
-                    value_type l_new = labels_new[ ufd.find( labeling1(x-range1[0],y-y_start) ) ];
-                    global_labeling(x,y) = l_new;
-                    labeling1(x-range1[0],y-y_start) = l_new;
-
-                }
-            }
-            
-            for( size_t x = range2[0] + 1; x < range2[1]; x++ ) {
-
-                for ( size_t y = y_start; y < y_stop; y++ )  {
-
-                    value_type l_new = labels_new[ ufd.find( labeling2(x-range2[0],y-y_start) ) ];
-                    global_labeling(x,y) = l_new;
-                    labeling2(x-range2[0],y-y_start) = l_new;
-
-                }
-            }
-
-            std::cout << "Finished Merge" << std::endl;
-
-            return true;
-
-        }
-
-
-        // check if we have overlap in y
-        else if( range2[2] == range1[3]- 2 && ( range1[0] == range2[0] && range1[1] == range2[1] )) {
-            throw std::runtime_error("Shouldn't come here right now");
-
-            return true;
-        }
-
-        else
-            return false;
 }
 
 

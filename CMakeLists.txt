@@ -7,7 +7,6 @@ include(CheckCXXCompilerFlag)
 # flag for pybindings
 option(BUILD_ESCARGOT_PYTHON OFF)
 
-
 # check for c++ 11 support
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     CHECK_CXX_COMPILER_FLAG("-std=c++14" HAS_CPP14_FLAG)
@@ -20,6 +19,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU"
         message(FATAL_ERROR "Unsupported compiler -- escargot  requires C++11 support!")
     endif()
 endif()
+        
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 # lib rt
 find_library(RT rt)
@@ -33,6 +34,14 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
         "MinSizeRel" "RelWithDebInfo")
 endif()
 string(TOUPPER "${CMAKE_BUILD_TYPE}" U_CMAKE_BUILD_TYPE)
+
+# boost
+find_package(Boost REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
+MESSAGE( STATUS ${Boost_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIR})
+MESSAGE( STATUS ${Boost_INCLUDE_DIR})
+
 
 # externals
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/externals/marray/include" )
